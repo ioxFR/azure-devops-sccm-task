@@ -1,0 +1,31 @@
+{
+  "name": "azuredevopssccmtask",
+  "version": "1.0.0",
+  "description": "SCCM Task for Azure DevOps Pipelines",
+  "main": "sccmpowershell.js",
+  "dependencies": {
+    "azure-pipelines-task-lib": "^2.9.5"
+  },
+  "devDependencies": {
+    "@types/mocha": "^7.0.2",
+    "@types/node": "^14.0.1",
+    "@types/q": "^1.5.2",
+    "sync-request": "^6.1.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ioxFR/azure-devops-sccm-task.git"
+  },
+  "keywords": [
+    "sccm"
+  ],
+  "author": "Valentin LECERF",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ioxFR/azure-devops-sccm-task/issues"
+  },
+  "homepage": "https://github.com/ioxFR/azure-devops-sccm-task#readme"
+}
