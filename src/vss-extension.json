@@ -1,15 +1,15 @@
 {
     "manifestVersion": 1,
-    "id": "build-release-task",
-    "name": "Fabrikam Build and Release Tools",
-    "version": "1.0.0",
+    "id": "sccm-build-release-task",
+    "name": "SCCM Task for Azure DevOps Pipelines",
+    "version": "1.0.4",
     "publisher": "vlecerf",
     "targets": [
         {
             "id": "Microsoft.VisualStudio.Services"
         }
     ],    
-    "description": "Tool to release an app package to sccm for deployment. Includes one build/release task.",
+    "description": "Tool to release an app package to SCCM for deployment. Includes one build/release task.",
     "categories": [
         "Azure Pipelines"
     ],
@@ -22,6 +22,63 @@
         }
     ],
     "contributions": [
+        {
+            "id": "sccm-service-endpoint",
+            "description": "Service endpoint for SCCM",
+            "type": "ms.vss-endpoint.service-endpoint-type",
+            "targets": [ "ms.vss-endpoint.endpoint-types" ],
+            "properties": {
+              "name": "Sccm",
+              "displayName": "SCCM server connection",
+              "url": {
+                "displayName": "Server Url",
+                "value": "https://vlecerf.com/",
+                "isVisible": "false"
+            },
+              "authenticationSchemes": [
+                {
+                  "type": "ms.vss-endpoint.endpoint-auth-scheme-basic",
+                  "inputDescriptors": [
+                    {
+                        "id": "hostname",
+                        "name": "Server Hostname",
+                        "description": "SCCM Hostname, fqdn or ip",
+                        "inputMode": "textbox",
+                        "isConfidential": false,
+                        "validation": {
+                          "isRequired": true,
+                          "dataType": "string"
+                        }
+                      },
+                    {
+                      "id": "username",
+                      "name": "Username",
+                      "description": "Username",
+                      "inputMode": "textbox",
+                      "isConfidential": false,
+                      "validation": {
+                        "isRequired": true,
+                        "dataType": "string"
+                      }
+                    },
+                    {
+                      "id": "password",
+                      "name": "Password",
+                      "description": "Password",
+                      "inputMode": "passwordbox",
+                      "isConfidential": true,
+                      "validation": {
+                        "isRequired": true,
+                        "dataType": "string"
+                      }
+                    }
+                  ]
+                }
+      
+              ],
+              "helpMarkDown": "<a href=\"url-to-documentation\" target=\"_blank\"><b>Learn More</b></a>"
+            }
+          },
         {
             "id": "sccm-build-release-task",
             "type": "ms.vss-distributed-task.task",

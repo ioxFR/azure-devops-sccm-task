@@ -25,7 +25,7 @@
     "groups": [
         {
             "name": "sccmConfiguration",
-            "displayName": "SCCM Cconfiguration",
+            "displayName": "SCCM Configuration",
             "isExpanded": false
         },
         {
@@ -38,11 +38,11 @@
     "inputs": [
         {
             "name": "sccmcredentials",
-            "type": "connectedService:Generic",
+            "type": "connectedService:Sccm",
             "label": "SCCM Generic Connection",
             "defaultValue": "",
             "required": true,
-            "helpMarkDown": "Generic connection created with sccm informations"
+            "helpMarkDown": "SCCM Service connection with credential and hostname"
           },
         {
             "name": "UniquePackageName",
@@ -128,7 +128,7 @@
         {
             "name": "appPublisher",
             "type": "string",
-            "label": "Application Version",
+            "label": "Application Publisher",
             "defaultValue": "",
             "required": false,
             "groupName": "applicationConfiguration",
