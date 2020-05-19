@@ -1,87 +1,69 @@
-import fs = require('fs');
-import path = require('path');
-import os = require('os');
-import tl = require('azure-pipelines-task-lib/task');
-import tr = require('azure-pipelines-task-lib/toolrunner');
-var uuidV4 = require('uuid/v4');
+import tl = require("azure-pipelines-task-lib/task");
+import tr = require("azure-pipelines-task-lib/toolrunner");
+import fs = require("fs");
+import os = require("os");
+import path = require("path");
+import uuidV4 = require("uuid/v4");
 
-async function run() {
+async function run(){
     try {
-        tl.setResourcePath(path.join(__dirname, 'task.json'));
+        tl.setResourcePath(path.join(__dirname, "task.json"));
 
         // Get inputs.
-        let _vsts_input_errorActionPreference: string = tl.getInput('errorActionPreference', false) || 'Stop';
-        switch (_vsts_input_errorActionPreference.toUpperCase()) {
-            case 'STOP':
-            case 'CONTINUE':
-            case 'SILENTLYCONTINUE':
+        const errorActionPreference: string = tl.getInput("errorActionPreference", false) || "Stop";
+        switch (errorActionPreference.toUpperCase()) {
+            case "STOP":
+            case "CONTINUE":
+            case "SILENTLYCONTINUE":
                 break;
             default:
-                throw new Error(tl.loc('JS_InvalidErrorActionPreference', _vsts_input_errorActionPreference));
+                throw new Error(tl.loc("JS_InvalidErrorActionPreference", errorActionPreference));
         }
 
-        let scriptType: string = tl.getInput('ScriptType', /*required*/true);
-        let scriptPath = tl.getPathInput('ScriptPath', false);
-        let scriptInline: string = tl.getInput('Inline', false);
-        let scriptArguments: string = tl.getInput('ScriptArguments', false);
-        let _vsts_input_failOnStandardError = tl.getBoolInput('FailOnStandardError', false);
-        let targetAzurePs: string = tl.getInput('TargetAzurePs', false);
-        let customTargetAzurePs: string = tl.getInput('CustomTargetAzurePs', false);
-        let serviceName = tl.getInput('ConnectedServiceNameARM',/*required*/true);
-        //let endpointObject= await new AzureRMEndpoint(serviceName).getEndpoint();
-        let input_workingDirectory = tl.getPathInput('workingDirectory', /*required*/ true, /*check*/ true);
-
-        // string constants
-        let otherVersion = "OtherVersion"
-
-        if (targetAzurePs == otherVersion) {
-            if (customTargetAzurePs != "") {
-                targetAzurePs = customTargetAzurePs;
-            }
-            else {
-                console.log(tl.loc('InvalidAzurePsVersion',customTargetAzurePs));
-            }
+        const ServiceEndpoint = tl.getInput("sccmcredentials", true);
+        // SCCM Configuration
+        const sccmPackageName = tl.getInput("UniquePackageName", true);
+        const sccmPackagePath = tl.getInput("PackagePath", true);
+        const sccmFolderPath = tl.getInput("SccmFolderPath", true);
+        const dpGroupsString = tl.getInput("dpGroups", true);
+        if (dpGroupsString !== undefined)
+        {
+        const sccmDpGroups: string[] = dpGroupsString.split(",");
         }
-        else {
-            targetAzurePs = ""
-        }
+        // Application Configuration
+        const appName = tl.getInput("appName", true);
+        const appDescription = tl.getInput("appDescription", true);
+        const appIconPath = tl.getInput("appIcon", true);
+        const appKeyword = tl.getInput("appKeyword", false);
+        const appVersion = tl.getInput("appVersion", true);
+        const appPublisher = tl.getInput("appPublisher", false);
 
-        var endpoint = ""
-        if (scriptType.toUpperCase() == 'FILEPATH') {
-            if (!tl.stats(scriptPath).isFile() || !scriptPath.toUpperCase().match(/\.PS1$/)) {
-                throw new Error(tl.loc('JS_InvalidFilePath', scriptPath));
-            }
-        }
-
+        const endpoint = "";
+        console.log(ServiceEndpoint);
         // Generate the script contents.
-        console.log(tl.loc('GeneratingScript'));
-        let contents: string[] = [];
-        let azFilePath = path.join(path.resolve(__dirname), 'InitializeAz.ps1');
-        contents.push(`$ErrorActionPreference = '${_vsts_input_errorActionPreference}'`); 
-        if(targetAzurePs == "") {
-            contents.push(`${azFilePath} -endpoint '${endpoint}'`);
-        }
-        else {
-            contents.push(`${azFilePath} -endpoint '${endpoint}' -targetAzurePs  ${targetAzurePs}`);
-        }
+        console.log(tl.loc("GeneratingScript"));
+        const contents: string[] = [];
 
-        if (scriptType.toUpperCase() == 'FILEPATH') {
-            contents.push(`. '${scriptPath.replace(/'/g, "''")}' ${scriptArguments}`.trim());
-            console.log(tl.loc('JS_FormattedCommand', contents[contents.length - 1]));
-        }
-        else {
-            contents.push(scriptInline);
-        }
+        // We define credentials for sccm server
+        contents.push("$pwd = ConvertTo-SecureString 'MyP@55w0rd' -AsPlainText -Force");
+        contents.push("$credentials = New-Object System.Management.Automation.PSCredential($user,$pwd)");
+        // We start remote session CredSSP Enabled
+        contents.push("Enter-PSSession -ComputerName fsdfsf -Credential $credentials –Authentication CredSSP");
+
+        // We close remote connection
+        contents.push("Exit-PSSession");
+            // contents.push(scriptInline);
 
         // Write the script to disk.
-        tl.assertAgent('2.115.0');
-        let tempDirectory = tl.getVariable('agent.tempDirectory');
+        tl.assertAgent("2.115.0");
+        const tempDirectory = tl.getVariable("agent.tempDirectory");
+        if (tempDirectory !== undefined){
         tl.checkPath(tempDirectory, `${tempDirectory} (agent.tempDirectory)`);
-        let filePath = path.join(tempDirectory, uuidV4() + '.ps1');
+        const filePath = path.join(tempDirectory, uuidV4() + ".ps1");
 
         await fs.writeFile(
             filePath,
-            '\ufeff' + contents.join(os.EOL),callback);           // Since UTF8 encoding is specified, node will
+            "\ufeff" + contents.join(os.EOL), callback);           // Since UTF8 encoding is specified, node will
                                             // encode the BOM into its UTF8 binary sequence.
 
         // Run the script.
@@ -90,46 +72,47 @@ async function run() {
         //
         // Note, use "-Command" instead of "-File" to match the Windows implementation. Refer to
         // comment on Windows implementation for an explanation why "-Command" is preferred.
-        let powershell = tl.tool(tl.which('pwsh') || tl.which('powershell') || tl.which('pwsh', true))
-            .arg('-NoLogo')
-            .arg('-NoProfile')
-            .arg('-NonInteractive')
-            .arg('-ExecutionPolicy')
-            .arg('Unrestricted')
-            .arg('-Command')
+        const powershell = tl.tool(tl.which("pwsh") || tl.which("powershell") || tl.which("pwsh", true))
+            .arg("-NoLogo")
+            .arg("-NoProfile")
+            .arg("-NonInteractive")
+            .arg("-ExecutionPolicy")
+            .arg("Unrestricted")
+            .arg("-Command")
             .arg(`. '${filePath.replace(/'/g, "''")}'`);
 
-        let options = <tr.IExecOptions>{
-            cwd: input_workingDirectory,
+        const options = {
+            cwd: "./",
             failOnStdErr: false,
             errStream: process.stdout, // Direct all output to STDOUT, otherwise the output may appear out
             outStream: process.stdout, // of order since Node buffers it's own STDOUT but not STDERR.
             ignoreReturnCode: true
-        };
+        } as tr.IExecOptions;
 
         // Listen for stderr.
-        let stderrFailure = false;
-        if (_vsts_input_failOnStandardError) {
+        const stderrFailure = false;
+    /*    if (_vsts_input_failOnStandardError) {
             powershell.on('stderr', (data) => {
                 stderrFailure = true;
             });
-        }
+        }*/
 
         // Run bash.
-        let exitCode: number = await powershell.exec(options);
+        const exitCode: number = await powershell.exec(options);
 
         // Fail on exit code.
         if (exitCode !== 0) {
-            tl.setResult(tl.TaskResult.Failed, tl.loc('JS_ExitCode', exitCode));
+            tl.setResult(tl.TaskResult.Failed, tl.loc("JS_ExitCode", exitCode));
         }
 
         // Fail on stderr.
         if (stderrFailure) {
-            tl.setResult(tl.TaskResult.Failed, tl.loc('JS_Stderr'));
+            tl.setResult(tl.TaskResult.Failed, tl.loc("JS_Stderr"));
         }
     }
+    }
     catch (err) {
-        tl.setResult(tl.TaskResult.Failed, err.message || 'run() failed');
+        tl.setResult(tl.TaskResult.Failed, err.message || "run() failed");
     }
 }
 function callback(){}

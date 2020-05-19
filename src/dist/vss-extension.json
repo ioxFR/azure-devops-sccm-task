@@ -2,7 +2,7 @@
     "manifestVersion": 1,
     "id": "sccm-build-release-task",
     "name": "SCCM Task for Azure DevOps Pipelines",
-    "version": "{{version}}",
+    "version": "1.20200419.35352",
     "publisher": "vlecerf",
     "targets": [
         {
