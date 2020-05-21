@@ -21,6 +21,10 @@ async function run(){
         }
 
         const ServiceEndpoint = tl.getInput("sccmcredentials", true);
+        const ServiceEndpointHostname = tl.getEndpointAuthorizationParameter(ServiceEndpoint, "hostname", false);
+        const ServiceEndpointUsername = tl.getEndpointAuthorizationParameter(ServiceEndpoint, "username", false);
+        const ServiceEndpointPassword = tl.getEndpointAuthorizationParameter(ServiceEndpoint, "password", false);
+
         // SCCM Configuration
         const sccmPackageName = tl.getInput("UniquePackageName", true);
         const sccmPackagePath = tl.getInput("PackagePath", true);
@@ -38,17 +42,19 @@ async function run(){
         const appVersion = tl.getInput("appVersion", true);
         const appPublisher = tl.getInput("appPublisher", false);
 
-        const endpoint = "";
-        console.log(ServiceEndpoint);
         // Generate the script contents.
         console.log(tl.loc("GeneratingScript"));
         const contents: string[] = [];
 
         // We define credentials for sccm server
-        contents.push("$pwd = ConvertTo-SecureString 'MyP@55w0rd' -AsPlainText -Force");
-        contents.push("$credentials = New-Object System.Management.Automation.PSCredential($user,$pwd)");
+        contents.push("$pwd = ConvertTo-SecureString '" + ServiceEndpointPassword + "' -AsPlainText -Force");
+        contents.push("$credentials = New-Object System.Management.Automation.PSCredential("
+         + ServiceEndpointUsername
+         + ",$pwd)");
         // We start remote session CredSSP Enabled
-        contents.push("Enter-PSSession -ComputerName fsdfsf -Credential $credentials –Authentication CredSSP");
+        contents.push("Enter-PSSession -ComputerName "
+         + ServiceEndpointHostname
+         + " -Credential $credentials –Authentication CredSSP");
 
         // We close remote connection
         contents.push("Exit-PSSession");
@@ -91,11 +97,11 @@ async function run(){
 
         // Listen for stderr.
         const stderrFailure = false;
-    /*    if (_vsts_input_failOnStandardError) {
-            powershell.on('stderr', (data) => {
+        // if (_vsts_input_failOnStandardError) {
+           /* powershell.on('stderr', (data) => {
                 stderrFailure = true;
-            });
-        }*/
+            });*/
+        // }
 
         // Run bash.
         const exitCode: number = await powershell.exec(options);
