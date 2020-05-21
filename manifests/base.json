@@ -14,12 +14,13 @@
         "Azure Pipelines"
     ],
     "icons": {
-        "default": "./sccm-task/icon.png"        
+        "default": "sccm-task/icon.png"        
     },
     "files": [
         {
-            "path": "./sccm-task"
-        }
+            "path": "sccm-task",
+            "addressable": true
+                  }
     ],
     "contributions": [
         {
@@ -80,7 +81,7 @@
             }
           },
         {
-            "id": "sccm-build-release-task",
+            "id": "sccm-task",
             "type": "ms.vss-distributed-task.task",
             "targets": [
                 "ms.vss-distributed-task.tasks"
