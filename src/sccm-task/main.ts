@@ -47,9 +47,9 @@ async function run(){
         const contents: string[] = [];
 
         // We define credentials for sccm server
-        // contents.push("$pwd = ConvertTo-SecureString '" + ServiceEndpointPassword + "' -AsPlainText -Force");
+        contents.push("$pwd = ConvertTo-SecureString '" + ServiceEndpointPassword + "' -AsPlainText -Force");
         contents.push("$credentials = New-Object System.Management.Automation.PSCredential('"
-         + ServiceEndpointUsername + "','" + ServiceEndpointPassword + "')");
+         + ServiceEndpointUsername + "',$pwd)");
         // We start remote session CredSSP Enabled
         contents.push("Enter-PSSession -ComputerName "
          + ServiceEndpointHostname
@@ -105,7 +105,7 @@ async function run(){
         tl.checkPath(tempDirectory, `${tempDirectory} (agent.tempDirectory)`);
         const filePath = path.join(tempDirectory, uuidV4() + ".ps1");
 
-        console.log(contents.join(os.EOL));
+        //console.log(contents.join(os.EOL));
 
         await fs.writeFile(
             filePath,
