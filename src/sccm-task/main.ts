@@ -24,16 +24,16 @@ async function run(){
         const ServiceEndpointHostname = tl.getEndpointAuthorizationParameter(ServiceEndpoint, "hostname", false);
         const ServiceEndpointUsername = tl.getEndpointAuthorizationParameter(ServiceEndpoint, "username", false);
         const ServiceEndpointPassword = tl.getEndpointAuthorizationParameter(ServiceEndpoint, "password", false);
+        // SCCM Site Code
+        const sccmSiteCode = tl.getInput("SccmSiteCode", true);
 
         // SCCM Configuration
         const sccmPackageName = tl.getInput("UniquePackageName", true);
         const sccmPackagePath = tl.getInput("PackagePath", true);
         const sccmFolderPath = tl.getInput("SccmFolderPath", true);
         const dpGroupsString = tl.getInput("dpGroups", true);
-        if (dpGroupsString !== undefined)
-        {
-        const sccmDpGroups: string[] = dpGroupsString.split(",");
-        }
+        const collectionName = tl.getInput("collectionName", true);
+
         // Application Configuration
         const appName = tl.getInput("appName", true);
         const appDescription = tl.getInput("appDescription", true);
@@ -48,17 +48,55 @@ async function run(){
 
         // We define credentials for sccm server
         contents.push("$pwd = ConvertTo-SecureString '" + ServiceEndpointPassword + "' -AsPlainText -Force");
-        contents.push("$credentials = New-Object System.Management.Automation.PSCredential("
-         + ServiceEndpointUsername
-         + ",$pwd)");
+        contents.push("$credentials = New-Object System.Management.Automation.PSCredential('"
+         + ServiceEndpointUsername + "',$pwd)");
         // We start remote session CredSSP Enabled
         contents.push("Enter-PSSession -ComputerName "
          + ServiceEndpointHostname
          + " -Credential $credentials –Authentication CredSSP");
 
+         // We cwd to SMS path
+        contents.push("CD $env:SMS_ADMIN_UI_PATH\..\ ");
+         // Importing SCCM modules
+        contents.push("import-module .\ConfigurationManager.psd1");
+         // Accessing to site code path
+        contents.push("CD " + sccmSiteCode + ":");
+
+         // We get last deployment of app if exist
+        contents.push("$lastDeploymentApp = Get-CMApplication -name " + appName + "*" +
+         " | Sort-Object -Property DateCreated -Descending | Select-Object -First 1");
+
+         // Create new application in sccm
+        contents.push("$newApp = New-CMApplication -Name " + sccmPackageName +
+         " -Description 'Created from Azure DevOps' -LocalizedName " + appName +
+         " -LocalizedDescription " + appDescription + " -ReleaseDate (get-date) " +
+         "-IconLocationFile " + appIconPath + " -Keyword " + appKeyword + " " +
+         "-SoftwareVersion " + appVersion + " -Publisher " + {appPublisher} + " -AutoInstall $true");
+
+        // APPX : Create a deployment type
+        contents.push("Add-CMWindowsAppxDeploymentType -ApplicationName " + sccmPackageName +
+        " -ContentLocation " + sccmPackagePath + " -AddLanguage 'fr-FR' -Comment 'Created from Azure Devops' ");
+
+        // We move object in sccm path
+        contents.push("Move-CMObject -FolderPath " + sccmSiteCode + ":\\" + sccmFolderPath + " -InputObject $newApp");
+
+        // Start a distribution
+        contents.push("Start-CMContentDistribution -ApplicationName " + sccmPackageName +
+        " -DistributionPointGroupName " + dpGroupsString + " -Verbose");
+
+        // Create app deployment
+        contents.push("New-CMApplicationDeployment -CollectionName " + collectionName +
+        " -Name " + sccmPackageName + " -DeployAction Install -DeployPurpose Available" +
+        " -UserNotification DisplayAll -AvailableDateTime (get-date) -TimeBaseOn LocalTime -Verbose");
+
+        // in case of last deployment exist, we superseed it
+        contents.push("If($lastAppDeployment -ne $null){");
+        contents.push("Add-CMDeploymentTypeSupersedence -IsUninstall $true -SupersedingDeploymentType" +
+        " (Get-CMDeploymentType -ApplicationName " + sccmPackageName + ") -SupersededDeploymentType" +
+        " (Get-CMDeploymentType -ApplicationName $lastAppDeployment.LocalizedDisplayName)}");
+
         // We close remote connection
         contents.push("Exit-PSSession");
-            // contents.push(scriptInline);
 
         // Write the script to disk.
         tl.assertAgent("2.115.0");
@@ -66,6 +104,8 @@ async function run(){
         if (tempDirectory !== undefined){
         tl.checkPath(tempDirectory, `${tempDirectory} (agent.tempDirectory)`);
         const filePath = path.join(tempDirectory, uuidV4() + ".ps1");
+
+        // console.log(contents.join(os.EOL));
 
         await fs.writeFile(
             filePath,

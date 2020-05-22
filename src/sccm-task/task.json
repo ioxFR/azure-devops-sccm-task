@@ -3,8 +3,8 @@
     "name": "SCCMDeploy",
     "friendlyName": "SCCM Deploy Task",
     "description": "Deploy application package to SCCM",
-    "helpMarkDown": "[Learn more about this task](https://vlecerf.com)",
-    "helpUrl": "https://vlecerf.com",
+    "helpMarkDown": "[Learn more about this task](https://github.com/ioxFR/azure-devops-sccm-task)",
+    "helpUrl": "https://github.com/ioxFR/azure-devops-sccm-task",
     "category": "Deploy",
     "visibility": [
         "Build",
@@ -44,6 +44,14 @@
             "required": true,
             "helpMarkDown": "SCCM Service connection with credential and hostname"
           },
+          {
+            "name": "SccmSiteCode",
+            "type": "string",
+            "label": "SCCM Site Code",
+            "defaultValue": "",
+            "required": true,
+            "helpMarkDown": "SCCM Site Code for your organization."
+        },
         {
             "name": "UniquePackageName",
             "type": "string",
@@ -79,6 +87,15 @@
             "required": true,
             "groupName": "sccmConfiguration",
             "helpMarkDown": "List of name of distribution groups seperated by a comma.Example: DP1,DP2,DP3"
+        },
+        {
+            "name": "collectionName",
+            "type": "string",
+            "label": "Deployment Collection Name",
+            "defaultValue": "",
+            "required": true,
+            "groupName": "sccmConfiguration",
+            "helpMarkDown": "SCCM Collection Name for package deployment scope"
         },
         {
             "name": "appName",
