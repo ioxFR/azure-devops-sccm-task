@@ -105,7 +105,7 @@ async function run(){
         tl.checkPath(tempDirectory, `${tempDirectory} (agent.tempDirectory)`);
         const filePath = path.join(tempDirectory, uuidV4() + ".ps1");
 
-        //console.log(contents.join(os.EOL));
+        // console.log(contents.join(os.EOL));
 
         await fs.writeFile(
             filePath,
