@@ -44,13 +44,11 @@ steps:
     targetType: 'inline'
     script: grep -rl '{{version}}' dist | xargs --verbose sed -i 's/{{version}}/$(Build.BuildNumber)/g'
 
-- task: ms-devlabs.vsts-developer-tools-build-tasks.package-extension-build-task.PackageVSTSExtension@1
+- task: PackageAzureDevOpsExtension@2
   displayName: 'Package extension'
   inputs:
-    rootFolder: dist
-    patternManifest: manifest.json
+    rootFolder: 'dist'
     outputPath: '$(Build.StagingDirectory)/extension-$(Build.BuildId).vsix'
-    bypassLocalValidation: true
-
+    updateTasksVersion: false
 - task: PublishBuildArtifacts@1
   displayName: 'Publish artifact'
