@@ -56,9 +56,9 @@ async function run(){
          + " -Credential $credentials –Authentication CredSSP");
 
          // We cwd to SMS path
-        contents.push("CD $env:SMS_ADMIN_UI_PATH\..\ ");
+        contents.push("CD $env:SMS_ADMIN_UI_PATH\\..\\ ");
          // Importing SCCM modules
-        contents.push("import-module .\ConfigurationManager.psd1");
+        contents.push("import-module .\\ConfigurationManager.psd1");
          // Accessing to site code path
         contents.push("CD " + sccmSiteCode + ":");
 
