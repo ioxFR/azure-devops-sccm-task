@@ -51,9 +51,11 @@ async function run(){
         contents.push("$credentials = New-Object System.Management.Automation.PSCredential('"
          + ServiceEndpointUsername + "',$pwd)");
         // We start remote session CredSSP Enabled
-        contents.push("Enter-PSSession -ComputerName "
+        contents.push("$session = New-PSSession -ComputerName "
          + ServiceEndpointHostname
-         + " -Credential $credentials –Authentication CredSSP");
+         + " -Credential $credentials –Authentication Credssp");
+
+        contents.push("Invoke-Command -Session $session -ScriptBlock{");
 
          // We cwd to SMS path
         contents.push("CD $env:SMS_ADMIN_UI_PATH\\..\\ ");
@@ -67,36 +69,38 @@ async function run(){
          " | Sort-Object -Property DateCreated -Descending | Select-Object -First 1");
 
          // Create new application in sccm
-        contents.push("$newApp = New-CMApplication -Name " + sccmPackageName +
-         " -Description 'Created from Azure DevOps' -LocalizedName " + appName +
-         " -LocalizedDescription " + appDescription + " -ReleaseDate (get-date) " +
-         "-IconLocationFile " + appIconPath + " -Keyword " + appKeyword + " " +
-         "-SoftwareVersion " + appVersion + " -Publisher " + {appPublisher} + " -AutoInstall $true");
+        contents.push("$newApp = New-CMApplication -Name '" + sccmPackageName +
+         "' -Description 'Created from Azure DevOps' -LocalizedName '" + appName +
+         "' -LocalizedDescription '" + appDescription + "' -ReleaseDate (get-date) " +
+         "-IconLocationFile '" + appIconPath + "' -Keyword '" + appKeyword + "' " +
+         "-SoftwareVersion '" + appVersion + "' -Publisher '" + appPublisher + "' -AutoInstall $true");
 
         // APPX : Create a deployment type
-        contents.push("Add-CMWindowsAppxDeploymentType -ApplicationName " + sccmPackageName +
-        " -ContentLocation " + sccmPackagePath + " -AddLanguage 'fr-FR' -Comment 'Created from Azure Devops' ");
+        contents.push("Add-CMWindowsAppxDeploymentType -ApplicationName '" + sccmPackageName +
+        "' -ContentLocation '" + sccmPackagePath + "' -AddLanguage 'fr-FR' -Comment 'Created from Azure Devops' ");
 
         // We move object in sccm path
-        contents.push("Move-CMObject -FolderPath " + sccmSiteCode + ":\\" + sccmFolderPath + " -InputObject $newApp");
+        contents.push("Move-CMObject -FolderPath '" + sccmSiteCode + ":\\" + sccmFolderPath + "' -InputObject $newApp");
 
         // Start a distribution
-        contents.push("Start-CMContentDistribution -ApplicationName " + sccmPackageName +
-        " -DistributionPointGroupName " + dpGroupsString + " -Verbose");
+        contents.push("Start-CMContentDistribution -ApplicationName '" + sccmPackageName +
+        "' -DistributionPointGroupName '" + dpGroupsString + "' -Verbose");
 
         // Create app deployment
-        contents.push("New-CMApplicationDeployment -CollectionName " + collectionName +
-        " -Name " + sccmPackageName + " -DeployAction Install -DeployPurpose Available" +
+        contents.push("New-CMApplicationDeployment -CollectionName '" + collectionName +
+        "' -Name '" + sccmPackageName + "' -DeployAction Install -DeployPurpose Available" +
         " -UserNotification DisplayAll -AvailableDateTime (get-date) -TimeBaseOn LocalTime -Verbose");
 
         // in case of last deployment exist, we superseed it
         contents.push("If($lastAppDeployment -ne $null){");
         contents.push("Add-CMDeploymentTypeSupersedence -IsUninstall $true -SupersedingDeploymentType" +
-        " (Get-CMDeploymentType -ApplicationName " + sccmPackageName + ") -SupersededDeploymentType" +
+        " (Get-CMDeploymentType -ApplicationName '" + sccmPackageName + "') -SupersededDeploymentType" +
         " (Get-CMDeploymentType -ApplicationName $lastAppDeployment.LocalizedDisplayName)}");
 
-        // We close remote connection
-        contents.push("Exit-PSSession");
+        // End of script block
+        contents.push("}");
+
+        contents.push("$session | Remove-PSSession");
 
         // Write the script to disk.
         tl.assertAgent("2.115.0");
@@ -129,9 +133,7 @@ async function run(){
 
         const options = {
             cwd: "./",
-            failOnStdErr: false,
-            errStream: process.stdout, // Direct all output to STDOUT, otherwise the output may appear out
-            outStream: process.stdout, // of order since Node buffers it's own STDOUT but not STDERR.
+            failOnStdErr: true,
             ignoreReturnCode: true
         } as tr.IExecOptions;
 
