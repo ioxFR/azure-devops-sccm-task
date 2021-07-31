@@ -4,6 +4,7 @@
     "name": "SCCM Task for Azure DevOps Pipelines",
     "version": "{{version}}",
     "publisher": "vlecerf",
+    "public": true,
     "targets": [
         {
             "id": "Microsoft.VisualStudio.Services"
@@ -22,6 +23,14 @@
             "addressable": true
                   }
     ],
+    "content": {
+      "details": {
+        "path": "overview.md"
+      },
+      "license": {
+        "path": "license.txt"
+      }
+    },
     "contributions": [
         {
             "id": "sccm-service-endpoint",

@@ -56,6 +56,14 @@ module.exports = env => {
                     to: Target
                 },
                 {
+                    from: path.join(__dirname, "./manifests/overview.md"),
+                    to: Target
+                },
+                {
+                    from: path.join(__dirname, "./manifests/license.txt"),
+                    to: Target
+                },
+                {
                     from: path.join(__dirname, "./manifests", `${env}.json`),
                     to: Target
                 },
